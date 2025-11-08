@@ -23,7 +23,7 @@ A macOS application for managing display layouts using [displayplacer](https://g
 ### Installation
 
 #### Option 1: Download Pre-built Binary (Coming Soon)
-Download the latest release from the [Releases](https://github.com/YOUR_USERNAME/dpui/releases) page.
+Download the latest release from the [Releases](https://github.com/dev-jelly/dpui/releases) page.
 
 #### Option 2: Build from Source
 
@@ -38,7 +38,7 @@ Download the latest release from the [Releases](https://github.com/YOUR_USERNAME
 
 2. **Clone and Build**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/dpui.git
+   git clone https://github.com/dev-jelly/dpui.git
    cd dpui
    npm install
    npm run tauri build
@@ -170,7 +170,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 If you encounter any issues or have questions:
 
-1. Check existing [Issues](https://github.com/YOUR_USERNAME/dpui/issues)
+1. Check existing [Issues](https://github.com/dev-jelly/dpui/issues)
 2. Create a new issue with details about your problem
 3. Include your macOS version and displayplacer version (`displayplacer --version`)
 
