@@ -1,50 +1,69 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import React from 'react';
+import { DisplayCanvas } from './components/DisplayCanvas';
+import { PresetManager } from './components/PresetManager';
+import { useDisplayStore } from './store/useDisplayStore';
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const { fetchDisplays, fetchPresets, loading, error } = useDisplayStore();
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  React.useEffect(() => {
+    // Load initial data
+    fetchDisplays();
+    fetchPresets();
+  }, [fetchDisplays, fetchPresets]);
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            DPUI - Display Manager
+          </h1>
+          <p className="text-gray-600">
+            Manage your display layouts with displayplacer
+          </p>
+        </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
+            Loading...
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="space-y-6">
+          {/* Display Canvas */}
+          <DisplayCanvas />
+
+          {/* Preset Manager */}
+          <PresetManager />
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-8 text-center text-sm text-gray-500">
+          <p>
+            Powered by{' '}
+            <a
+              href="https://github.com/jakehilborn/displayplacer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              displayplacer
+            </a>
+          </p>
+        </footer>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    </div>
   );
 }
 
