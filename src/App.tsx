@@ -1,16 +1,56 @@
 import React from 'react';
 import { DisplayCanvas } from './components/DisplayCanvas';
 import { PresetManager } from './components/PresetManager';
+import { HotkeyManager } from './components/HotkeyManager';
+import { ErrorDialog } from './components/ErrorDialog';
 import { useDisplayStore } from './store/useDisplayStore';
+import { listen } from '@tauri-apps/api/event';
 
 function App() {
-  const { fetchDisplays, fetchPresets, loading, error } = useDisplayStore();
+  const { fetchDisplays, fetchPresets, loading, error, presets, applyConfig } = useDisplayStore();
+  const [showError, setShowError] = React.useState(false);
+  const [errorContext, setErrorContext] = React.useState<string>('');
+
+  // Track error changes
+  React.useEffect(() => {
+    if (error) {
+      setShowError(true);
+    }
+  }, [error]);
 
   React.useEffect(() => {
     // Load initial data
+    setErrorContext('초기 데이터 로드');
     fetchDisplays();
     fetchPresets();
-  }, [fetchDisplays, fetchPresets]);
+
+    // Listen for system tray events
+    const unlistenRefresh = listen('refresh-displays', () => {
+      setErrorContext('디스플레이 새로고침');
+      fetchDisplays();
+    });
+
+    const unlistenApplyPreset = listen('apply-preset-from-tray', (event) => {
+      const presetId = event.payload as string;
+      const preset = presets.find(p => p.id === presetId);
+      if (preset) {
+        setErrorContext('트레이에서 프리셋 적용');
+        applyConfig(preset.config);
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      unlistenRefresh.then(fn => fn());
+      unlistenApplyPreset.then(fn => fn());
+    };
+  }, [fetchDisplays, fetchPresets, presets, applyConfig]);
+
+  const handleRetry = () => {
+    setErrorContext('재시도');
+    fetchDisplays();
+    fetchPresets();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -35,18 +75,6 @@ function App() {
           </p>
         </header>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <div>
-                <p className="font-semibold text-red-800">오류 발생</p>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Loading Indicator */}
         {loading && (
@@ -65,6 +93,9 @@ function App() {
 
           {/* Preset Manager */}
           <PresetManager />
+
+          {/* Hotkey Manager */}
+          <HotkeyManager />
         </div>
 
         {/* Footer */}
@@ -82,6 +113,19 @@ function App() {
           </p>
         </footer>
       </div>
+
+      {/* Error Dialog */}
+      <ErrorDialog
+        isOpen={showError}
+        errorMessage={error || ''}
+        context={errorContext}
+        onClose={() => {
+          setShowError(false);
+          // Clear the error in the store
+          useDisplayStore.setState({ error: null });
+        }}
+        onRetry={handleRetry}
+      />
     </div>
   );
 }

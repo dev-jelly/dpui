@@ -3,14 +3,45 @@ import type { Display } from '../types/display';
 import { ConfirmDialog } from './ConfirmDialog';
 import { AlertDialog } from './AlertDialog';
 
+/**
+ * Props for the DisplayCard component.
+ */
 interface DisplayCardProps {
+  /** Display information to render */
   display: Display;
+  /** Scale factor for rendering (default: 0.1) */
   scale?: number;
+  /** Callback when display position changes via drag */
   onPositionChange?: (origin: [number, number]) => void;
+  /** Callback when display enabled state changes */
   onToggleEnabled?: (id: string, enabled: boolean) => void;
+  /** Total number of currently enabled displays */
   enabledCount?: number;
 }
 
+/**
+ * DisplayCard component - Interactive display representation
+ *
+ * Renders a draggable card representing a physical display/monitor.
+ * Features include:
+ * - Visual ON/OFF state indication
+ * - Drag and drop positioning
+ * - 15-second countdown confirmation for turning off displays
+ * - Last display protection (prevents turning off all displays)
+ * - Responsive hover and active states
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <DisplayCard
+ *   display={displayData}
+ *   scale={0.1}
+ *   onPositionChange={(origin) => updatePosition(displayData.id, origin)}
+ *   onToggleEnabled={(id, enabled) => toggleDisplay(id, enabled)}
+ *   enabledCount={2}
+ * />
+ * ```
+ */
 export const DisplayCard: React.FC<DisplayCardProps> = ({
   display,
   scale = 0.1,
@@ -31,6 +62,10 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
   const scaledX = display.origin[0] * scale;
   const scaledY = display.origin[1] * scale;
 
+  /**
+   * Handle mouse down event to start dragging.
+   * Captures the initial mouse position relative to the display card.
+   */
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!onPositionChange) return;
 
@@ -69,6 +104,14 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
     };
   }, [isDragging, dragOffset, scale, onPositionChange]);
 
+  /**
+   * Handle toggle button click for turning display ON/OFF.
+   * Implements safety checks:
+   * - Immediate activation for OFF displays
+   * - Prevents disabling the last active display
+   * - Shows 15-second confirmation dialog for turning OFF
+   * - Auto-rollback on timeout
+   */
   const handleToggleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -102,6 +145,10 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
     }, 1000);
   };
 
+  /**
+   * Confirm display disable action.
+   * Clears the countdown timer and executes the disable callback.
+   */
   const handleConfirmDisable = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -114,6 +161,11 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
     }
   };
 
+  /**
+   * Cancel display disable action.
+   * Clears the countdown timer and closes the confirmation dialog.
+   * This is called either manually or automatically on timeout.
+   */
   const handleCancelDisable = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);

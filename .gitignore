@@ -37,4 +37,20 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# AI Agent directories (keep local only)
+.clinerules/
+.cursor/
+.gemini/
+.kilo/
+.kiro/
+.roo/
+.trae/
+.windsurf/
+.zed/
+.serena/
+AGENT.md
+AGENTS.md
+GEMINI.md
+opencode.json

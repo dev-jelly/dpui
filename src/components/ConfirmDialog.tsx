@@ -1,14 +1,47 @@
 import React, { useEffect } from 'react';
 
+/**
+ * Props for the ConfirmDialog component.
+ */
 interface ConfirmDialogProps {
+  /** Controls dialog visibility */
   isOpen: boolean;
+  /** Dialog title text */
   title: string;
+  /** Main message to display */
   message: string;
+  /** Current countdown value in seconds */
   countdown: number;
+  /** Callback when user confirms the action */
   onConfirm: () => void;
+  /** Callback when user cancels or timeout occurs */
   onCancel: () => void;
 }
 
+/**
+ * ConfirmDialog component - 15-second countdown confirmation modal
+ *
+ * Displays a confirmation dialog with an auto-rollback countdown timer.
+ * Used specifically for dangerous operations like turning off displays.
+ * Features:
+ * - 15-second countdown with visual indicator
+ * - Auto-cancel on timeout for safety
+ * - ESC key handling for quick cancel
+ * - Gradient styling for visual emphasis
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <ConfirmDialog
+ *   isOpen={showConfirm}
+ *   title="디스플레이 끄기"
+ *   message="Display를 끄시겠습니까?"
+ *   countdown={15}
+ *   onConfirm={handleConfirm}
+ *   onCancel={handleCancel}
+ * />
+ * ```
+ */
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title,

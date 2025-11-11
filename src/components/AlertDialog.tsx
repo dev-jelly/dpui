@@ -1,12 +1,41 @@
 import React, { useEffect } from 'react';
 
+/**
+ * Props for the AlertDialog component.
+ */
 interface AlertDialogProps {
+  /** Controls dialog visibility */
   isOpen: boolean;
+  /** Dialog title text */
   title: string;
+  /** Alert message to display */
   message: string;
+  /** Callback when dialog is closed */
   onClose: () => void;
 }
 
+/**
+ * AlertDialog component - Simple alert modal
+ *
+ * Displays an alert message with a single confirmation button.
+ * Used for warnings and informational messages that require user acknowledgment.
+ * Features:
+ * - ESC key handling for quick dismiss
+ * - Auto-focus on confirm button
+ * - Gradient styling for visual emphasis
+ * - Smooth animations
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <AlertDialog
+ *   isOpen={showAlert}
+ *   title="작업 불가"
+ *   message="마지막 활성화된 디스플레이는 끌 수 없습니다."
+ *   onClose={() => setShowAlert(false)}
+ * />
+ * ```
+ */
 export const AlertDialog: React.FC<AlertDialogProps> = ({
   isOpen,
   title,
