@@ -40,8 +40,7 @@
       "minimumSystemVersion": "10.15",
       "frameworks": [],
       "exceptionDomain": "",
-      "signingIdentity": null,
-      "license": "../LICENSE"
+      "signingIdentity": null
     },
     "shortDescription": "Display Manager for macOS",
     "longDescription": "DPUI is a modern GUI application for easily managing multiple monitor layouts on macOS. It wraps the displayplacer CLI tool with an intuitive interface.",
