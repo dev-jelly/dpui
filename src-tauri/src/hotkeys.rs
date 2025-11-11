@@ -4,8 +4,7 @@
 //! to quickly apply display presets without switching to the application.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Represents a hotkey binding for a preset.
@@ -172,7 +171,7 @@ pub async fn validate_hotkey_format(shortcut_str: String) -> HotkeyResult<()> {
 ///
 /// This function can be called from the main.rs setup to register
 /// default hotkeys for existing presets with configured shortcuts.
-pub fn initialize_default_hotkeys(app: &AppHandle) -> HotkeyResult<()> {
+pub fn initialize_default_hotkeys(_app: &AppHandle) -> HotkeyResult<()> {
     // Load presets and register their hotkeys
     // This would typically load from your preset storage
 

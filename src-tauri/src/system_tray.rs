@@ -4,11 +4,10 @@
 //! through the macOS menu bar.
 
 use tauri::{
-    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu, MenuItemBuilder},
+    menu::{Menu, PredefinedMenuItem, Submenu, MenuItemBuilder},
     tray::{TrayIcon, TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState},
-    AppHandle, Manager, Runtime,
+    AppHandle, Emitter, Manager, Runtime,
 };
-use crate::presets::Preset;
 
 /// Initialize the system tray icon and menu.
 ///
@@ -20,7 +19,11 @@ use crate::presets::Preset;
 /// # Returns
 /// * `Ok(())` - Tray initialized successfully
 /// * `Err(String)` - Error message if initialization fails
-pub fn init_system_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_system_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error::Error>>
+where
+    R: Runtime,
+    AppHandle<R>: Manager<R>,
+{
     // Create the tray menu
     let menu = create_tray_menu(app)?;
 
@@ -29,7 +32,7 @@ pub fn init_system_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn st
     let _tray = TrayIconBuilder::with_id("main")
         .tooltip("DPUI - Display Manager")
         .menu(&menu)
-        .menu_on_left_click(false)
+        .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
             handle_tray_event(tray, event);
         })
@@ -80,20 +83,10 @@ fn create_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, Box<dyn s
 fn create_presets_submenu<R: Runtime>(app: &AppHandle<R>) -> Result<Submenu<R>, Box<dyn std::error::Error>> {
     let presets_menu = Submenu::with_id(app, "presets", "Quick Presets", true)?;
 
-    // Load presets and add them to the menu
-    // This would typically load from your preset storage
-    if let Ok(preset_store) = crate::presets::load_presets() {
-        for preset in preset_store.presets.iter() {
-            let preset_item = MenuItemBuilder::with_id(
-                format!("preset_{}", preset.id),
-                &preset.name
-            ).build(app)?;
-            presets_menu.append(&preset_item)?;
-        }
-    }
+    // Note: Presets will be loaded asynchronously and the menu will be updated
+    // via update_tray_menu() once presets are available
 
-    // Add separator and "Manage Presets" option if there are presets
-    presets_menu.append(&PredefinedMenuItem::separator(app)?)?;
+    // Add "Manage Presets" option
     let manage_presets = MenuItemBuilder::with_id("manage_presets", "Manage Presets...")
         .build(app)?;
     presets_menu.append(&manage_presets)?;
@@ -102,7 +95,7 @@ fn create_presets_submenu<R: Runtime>(app: &AppHandle<R>) -> Result<Submenu<R>, 
 }
 
 /// Handle tray icon events.
-fn handle_tray_event(tray: &TrayIcon, event: TrayIconEvent) {
+fn handle_tray_event(_tray: &TrayIcon, event: TrayIconEvent) {
     match event {
         TrayIconEvent::Click {
             button: MouseButton::Left,
