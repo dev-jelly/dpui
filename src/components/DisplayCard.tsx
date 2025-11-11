@@ -1,20 +1,30 @@
 import React from 'react';
 import type { Display } from '../types/display';
+import { ConfirmDialog } from './ConfirmDialog';
+import { AlertDialog } from './AlertDialog';
 
 interface DisplayCardProps {
   display: Display;
   scale?: number;
   onPositionChange?: (origin: [number, number]) => void;
+  onToggleEnabled?: (id: string, enabled: boolean) => void;
+  enabledCount?: number;
 }
 
 export const DisplayCard: React.FC<DisplayCardProps> = ({
   display,
   scale = 0.1,
   onPositionChange,
+  onToggleEnabled,
+  enabledCount = 1,
 }) => {
   const [width, height] = display.resolution.split('x').map(Number);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const [showAlert, setShowAlert] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(15);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const scaledWidth = width * scale;
   const scaledHeight = height * scale;
@@ -59,28 +69,142 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
     };
   }, [isDragging, dragOffset, scale, onPositionChange]);
 
+  const handleToggleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!onToggleEnabled) return;
+
+    // If turning ON, do it immediately
+    if (!display.enabled) {
+      onToggleEnabled(display.id, true);
+      return;
+    }
+
+    // If turning OFF, check if it's the last enabled display
+    if (display.enabled && enabledCount <= 1) {
+      setShowAlert(true);
+      return;
+    }
+
+    // Show confirmation dialog for turning OFF
+    setShowConfirm(true);
+    setCountdown(15);
+
+    // Start countdown timer
+    let remainingTime = 15;
+    timerRef.current = setInterval(() => {
+      remainingTime -= 1;
+      setCountdown(remainingTime);
+
+      if (remainingTime <= 0) {
+        handleCancelDisable();
+      }
+    }, 1000);
+  };
+
+  const handleConfirmDisable = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setShowConfirm(false);
+
+    if (onToggleEnabled) {
+      onToggleEnabled(display.id, false);
+    }
+  };
+
+  const handleCancelDisable = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setShowConfirm(false);
+    setCountdown(15);
+  };
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div
-      className={`absolute border-2 border-blue-500 bg-blue-100 rounded-lg shadow-lg
-                  flex items-center justify-center cursor-move transition-all
-                  ${isDragging ? 'opacity-70 scale-105' : 'hover:shadow-xl'}
-                  ${!display.enabled ? 'opacity-50 border-gray-400 bg-gray-200' : ''}`}
-      style={{
-        left: `${scaledX}px`,
-        top: `${scaledY}px`,
-        width: `${scaledWidth}px`,
-        height: `${scaledHeight}px`,
-        transform: `rotate(${display.rotation}deg)`,
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      <div className="text-center p-2">
-        <div className="font-bold text-lg">Display {display.id}</div>
-        <div className="text-sm text-gray-600">{display.resolution}</div>
-        <div className="text-xs text-gray-500 mt-1">
-          ({display.origin[0]}, {display.origin[1]})
+    <>
+      <div
+        className={`absolute border-4 rounded-xl shadow-xl
+                    flex flex-col cursor-move transition-all duration-300
+                    ${isDragging ? 'opacity-70 scale-105 shadow-2xl' : 'hover:shadow-2xl hover:scale-[1.02]'}
+                    ${display.enabled
+                      ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50'
+                      : 'border-red-500 bg-gradient-to-br from-red-50 to-rose-50 opacity-60'}`}
+        style={{
+          left: `${scaledX}px`,
+          top: `${scaledY}px`,
+          width: `${scaledWidth}px`,
+          height: `${scaledHeight}px`,
+          transform: `rotate(${display.rotation}deg)`,
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        {/* Status Badge */}
+        <div className={`absolute top-0 left-0 right-0 py-1.5 text-center text-xs font-bold
+                        rounded-t-lg shadow-sm transition-colors duration-300
+                        ${display.enabled
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                          : 'bg-gradient-to-r from-red-500 to-rose-500 text-white'}`}>
+          {display.enabled ? '✓ 활성화됨 (ON)' : '✗ 비활성화됨 (OFF)'}
+        </div>
+
+        {/* Toggle Button */}
+        {onToggleEnabled && (
+          <button
+            onClick={handleToggleClick}
+            className={`absolute top-8 right-2 px-4 py-2 rounded-lg text-sm font-bold
+                        transition-all duration-200 cursor-pointer z-10 shadow-lg
+                        ${display.enabled
+                          ? 'bg-red-600 text-white hover:bg-red-700 hover:scale-110 active:scale-95'
+                          : 'bg-green-600 text-white hover:bg-green-700 hover:scale-110 active:scale-95'}`}
+            title={display.enabled ? '디스플레이 끄기' : '디스플레이 켜기'}
+          >
+            {display.enabled ? '🔴 끄기' : '🟢 켜기'}
+          </button>
+        )}
+
+        {/* Display Info */}
+        <div className="flex-1 flex items-center justify-center text-center p-3 pt-10">
+          <div>
+            <div className="font-bold text-xl text-gray-900 mb-1">Display {display.id}</div>
+            <div className="text-sm text-gray-700 font-semibold bg-white bg-opacity-50 px-3 py-1 rounded-full mb-2">
+              {display.resolution}
+            </div>
+            <div className="text-xs text-gray-600 bg-white bg-opacity-40 px-2 py-1 rounded">
+              위치: ({display.origin[0]}, {display.origin[1]})
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="디스플레이 끄기"
+        message={`Display ${display.id} (${display.resolution})를 끄시겠습니까?`}
+        countdown={countdown}
+        onConfirm={handleConfirmDisable}
+        onCancel={handleCancelDisable}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        isOpen={showAlert}
+        title="작업 불가"
+        message="⚠️ 마지막 활성화된 디스플레이는 끌 수 없습니다."
+        onClose={() => setShowAlert(false)}
+      />
+    </>
   );
 };

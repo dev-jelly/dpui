@@ -12,6 +12,7 @@ interface DisplayState {
   // Actions
   fetchDisplays: () => Promise<void>;
   applyConfig: (config: string) => Promise<void>;
+  toggleDisplayEnabled: (id: string, enabled: boolean) => Promise<void>;
   fetchPresets: () => Promise<void>;
   addPreset: (name: string, config: string, hotkey?: string) => Promise<void>;
   deletePreset: (id: string) => Promise<void>;
@@ -42,6 +43,18 @@ export const useDisplayStore = create<DisplayState>((set, get) => ({
     try {
       await invoke('apply_config', { config });
       // Refresh displays after applying config
+      await get().fetchDisplays();
+      set({ loading: false });
+    } catch (error) {
+      set({ error: String(error), loading: false });
+    }
+  },
+
+  toggleDisplayEnabled: async (id: string, enabled: boolean) => {
+    set({ loading: true, error: null });
+    try {
+      await invoke('toggle_display_enabled', { id, enabled });
+      // Refresh displays after toggling
       await get().fetchDisplays();
       set({ loading: false });
     } catch (error) {

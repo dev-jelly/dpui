@@ -1,14 +1,13 @@
 mod displayplacer;
 mod presets;
 
-use displayplacer::{apply_config, get_displays};
+use displayplacer::{apply_config, get_displays, toggle_display_enabled};
 use presets::{add_preset, delete_preset, load_presets, save_presets, update_preset};
-use tauri::Manager;
 
 /// Create windows on all available displays
 fn create_multi_display_windows(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     // Get all available monitors
-    let monitors = app.primary_monitor()?.ok_or("No primary monitor found")?;
+    let _monitors = app.primary_monitor()?.ok_or("No primary monitor found")?;
     let available_monitors = app.available_monitors()?;
 
     println!("Found {} monitors", available_monitors.len());
@@ -53,6 +52,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_displays,
             apply_config,
+            toggle_display_enabled,
             load_presets,
             save_presets,
             add_preset,

@@ -60,19 +60,52 @@ pub async fn apply_config(config: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Toggle display enabled/disabled state
+#[tauri::command]
+pub async fn toggle_display_enabled(id: String, enabled: bool) -> Result<(), String> {
+    let enabled_str = if enabled { "true" } else { "false" };
+    let config = format!("id:{} enabled:{}", id, enabled_str);
+
+    let output = Command::new("displayplacer")
+        .arg(&config)
+        .output()
+        .map_err(|e| format!("Failed to execute displayplacer: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "displayplacer failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    Ok(())
+}
+
 /// Parse displayplacer output to extract display information
 fn parse_displayplacer_output(output: &str) -> Result<Vec<Display>, String> {
     let mut displays = Vec::new();
+    let mut found_execute_line = false;
 
-    // Look for lines that start with "displayplacer"
+    // Look for the "Execute the command below" section
     for line in output.lines() {
-        if line.contains("displayplacer") {
+        // Check if we found the "Execute the command below" marker
+        if line.contains("Execute the command below") {
+            found_execute_line = true;
+            continue;
+        }
+
+        // Only parse displayplacer commands after the "Execute" marker
+        // and that contain both "id:" and "origin:" (to filter out examples)
+        if found_execute_line
+            && line.trim().starts_with("displayplacer")
+            && line.contains("id:")
+            && line.contains("origin:") {
             // Extract display configurations from the command
             // Example: displayplacer "id:1 res:2560x1440 origin:(0,0) degree:0"
 
             let parts: Vec<&str> = line.split('"').collect();
             for part in parts.iter() {
-                if part.contains("id:") {
+                if part.contains("id:") && part.contains("origin:") {
                     if let Some(display) = parse_display_string(part) {
                         displays.push(display);
                     }
