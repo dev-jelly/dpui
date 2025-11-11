@@ -96,7 +96,7 @@ pub fn run() {
             }
 
             // Initialize system tray
-            if let Err(e) = init_system_tray(&app.handle()) {
+            if let Err(e) = init_system_tray(app) {
                 eprintln!("Failed to initialize system tray: {}", e);
             }
 

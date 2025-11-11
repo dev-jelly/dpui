@@ -6,7 +6,7 @@
 use tauri::{
     menu::{Menu, PredefinedMenuItem, Submenu, MenuItemBuilder},
     tray::{TrayIcon, TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState},
-    AppHandle, Emitter, Manager, Runtime,
+    App, AppHandle, Emitter, Manager, Runtime,
 };
 
 /// Initialize the system tray icon and menu.
@@ -19,17 +19,13 @@ use tauri::{
 /// # Returns
 /// * `Ok(())` - Tray initialized successfully
 /// * `Err(String)` - Error message if initialization fails
-pub fn init_system_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error::Error>>
-where
-    R: Runtime,
-    AppHandle<R>: Manager<R>,
-{
+pub fn init_system_tray<R: Runtime>(app: &App<R>) -> Result<(), Box<dyn std::error::Error>> {
     // Create the tray menu
     let menu = create_tray_menu(app)?;
 
     // Create tray icon
     // Note: You need to add an icon file in src-tauri/icons/tray-icon.png
-    let _tray = TrayIconBuilder::with_id("main")
+    let _tray: TrayIcon<R> = TrayIconBuilder::<R>::with_id("main")
         .tooltip("DPUI - Display Manager")
         .menu(&menu)
         .show_menu_on_left_click(false)
@@ -43,7 +39,7 @@ where
 }
 
 /// Create the tray menu structure.
-fn create_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, Box<dyn std::error::Error>> {
+fn create_tray_menu<R: Runtime>(app: &impl Manager<R>) -> Result<Menu<R>, Box<dyn std::error::Error>> {
     let menu = Menu::new(app)?;
 
     // Show/Hide Window
@@ -80,7 +76,7 @@ fn create_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, Box<dyn s
 }
 
 /// Create the presets submenu.
-fn create_presets_submenu<R: Runtime>(app: &AppHandle<R>) -> Result<Submenu<R>, Box<dyn std::error::Error>> {
+fn create_presets_submenu<R: Runtime>(app: &impl Manager<R>) -> Result<Submenu<R>, Box<dyn std::error::Error>> {
     let presets_menu = Submenu::with_id(app, "presets", "Quick Presets", true)?;
 
     // Note: Presets will be loaded asynchronously and the menu will be updated
@@ -95,7 +91,7 @@ fn create_presets_submenu<R: Runtime>(app: &AppHandle<R>) -> Result<Submenu<R>, 
 }
 
 /// Handle tray icon events.
-fn handle_tray_event(_tray: &TrayIcon, event: TrayIconEvent) {
+fn handle_tray_event<R: Runtime>(_tray: &TrayIcon<R>, event: TrayIconEvent) {
     match event {
         TrayIconEvent::Click {
             button: MouseButton::Left,
